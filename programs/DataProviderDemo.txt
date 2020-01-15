@@ -1,0 +1,72 @@
+package TestNGDemo;
+
+import java.io.FileInputStream;
+import java.io.IOException;
+
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+
+public class DataProviderDemo {
+	WebDriver  driver;
+	@BeforeMethod
+	public void launchBrowser() {
+		String driverPath = System.getProperty("user.dir")
+				+"\\src\\Browser_Drivers\\chromedriver.exe";
+		System.setProperty("webdriver.chrome.driver", driverPath);
+		driver = new ChromeDriver();
+		driver.get("https://opensource-demo.orangehrmlive.com/");
+	
+	}
+	@DataProvider
+	public  String[][] readData() throws IOException {
+		//1. get SheetPath
+		String sheetPath =  System.getProperty("user.dir")
+							+"\\src\\TestData\\TestData.xlsx";
+		FileInputStream  fis = new FileInputStream(sheetPath);
+		Workbook wb = new XSSFWorkbook(fis);
+		Sheet  sh = wb.getSheet("Login");
+		int lastRowNum = sh.getLastRowNum();//4
+		int firstRowNum = sh.getFirstRowNum();
+		int total_Rows = (lastRowNum-firstRowNum) +1;
+		//System.out.println(total_Rows);
+		Row row = sh.getRow(0);
+		int cCount = row.getLastCellNum();//2
+		//System.out.println(cCount);
+		String[][] tempDataArr = new String[lastRowNum][cCount]; 
+		for(int i=1;i<total_Rows;i++) 
+		{
+			for(int j=0;j<cCount;j++) {
+				tempDataArr[i-1][j]= sh.getRow(i).getCell(j).getStringCellValue();
+			}
+			System.out.println();
+		}
+		return tempDataArr;
+	}
+	
+	
+	@Test(dataProvider="readData")
+	public void loginFun(String username, String pwd) {
+		driver.findElement(By.xpath("//input[@id='txtUsername']")).sendKeys(username);
+		driver.findElement(By.xpath("//input[@id='txtPassword']")).sendKeys(pwd);
+		driver.findElement(By.xpath("//input[@id='btnLogin']")).click();
+		
+	}
+	
+	@AfterMethod
+	public void logOut() {
+		driver.findElement(By.id("welcome")).click();
+		driver.findElement(By.linkText("Logout")).click();
+	}
+	
+	
+
+}
